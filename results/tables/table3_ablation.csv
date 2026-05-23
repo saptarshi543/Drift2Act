@@ -1,0 +1,6 @@
+Config,alpha,beta,gamma,Precision,Recall,F1
+KL only,1.0,0.0,0.0,0.6,1.0,0.75
+Rank shift only,0.0,1.0,0.0,0.6,1.0,0.75
+Direction flip only,0.0,0.0,1.0,0.6,1.0,0.75
+Equal weights,0.33,0.33,0.34,0.6,1.0,0.75
+Drift2Act SADI (ours),0.5,0.3,0.2,0.6,1.0,0.75

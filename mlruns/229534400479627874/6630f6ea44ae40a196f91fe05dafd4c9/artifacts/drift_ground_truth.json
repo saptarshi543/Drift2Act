@@ -1,0 +1,105 @@
+{
+  "phase": "phase3",
+  "drift_type": "severe_multisystem",
+  "affected_features": {
+    "O2Sat": {
+      "columns": [
+        "O2Sat_mean",
+        "O2Sat_std",
+        "O2Sat_min",
+        "O2Sat_max"
+      ],
+      "scale_factor": 0.7661,
+      "noise_std": 0.04,
+      "component": "severe_respiratory"
+    },
+    "Resp": {
+      "columns": [
+        "Resp_mean",
+        "Resp_std",
+        "Resp_min",
+        "Resp_max"
+      ],
+      "scale_factor": 0.6686,
+      "noise_std": 0.04,
+      "component": "severe_respiratory"
+    },
+    "FiO2": {
+      "columns": [
+        "FiO2_mean",
+        "FiO2_std",
+        "FiO2_min",
+        "FiO2_max"
+      ],
+      "scale_factor": 0.7502,
+      "noise_std": 0.04,
+      "component": "severe_respiratory"
+    },
+    "PaCO2": {
+      "columns": [
+        "PaCO2_mean",
+        "PaCO2_std",
+        "PaCO2_min",
+        "PaCO2_max"
+      ],
+      "scale_factor": 0.6744,
+      "noise_std": 0.04,
+      "component": "severe_respiratory"
+    },
+    "WBC": {
+      "columns": [
+        "WBC_mean",
+        "WBC_std",
+        "WBC_min",
+        "WBC_max"
+      ],
+      "scale_factor": 1.3393,
+      "noise_std": 0.03,
+      "component": "inflammatory_upward"
+    },
+    "Lactate": {
+      "columns": [
+        "Lactate_mean",
+        "Lactate_std",
+        "Lactate_min",
+        "Lactate_max"
+      ],
+      "scale_factor": 1.2933,
+      "noise_std": 0.03,
+      "component": "inflammatory_upward"
+    },
+    "Fibrinogen": {
+      "columns": [
+        "Fibrinogen_mean",
+        "Fibrinogen_std",
+        "Fibrinogen_min",
+        "Fibrinogen_max"
+      ],
+      "scale_factor": 1.2584,
+      "noise_std": 0.03,
+      "component": "inflammatory_upward"
+    },
+    "Creatinine": {
+      "columns": [
+        "Creatinine_mean",
+        "Creatinine_std",
+        "Creatinine_min",
+        "Creatinine_max"
+      ],
+      "scale_factor": 1.191,
+      "noise_std": 0.03,
+      "component": "inflammatory_upward"
+    },
+    "O2Sat_correlation_break": {
+      "columns": [
+        "O2Sat_mean",
+        "O2Sat_std",
+        "O2Sat_min",
+        "O2Sat_max"
+      ],
+      "additional_noise_std": 0.15,
+      "component": "correlation_breaking"
+    }
+  },
+  "label_flip_rate": 0.0557
+}

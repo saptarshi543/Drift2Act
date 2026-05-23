@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/USER/.gemini/antigravity/scratch/drift2act/mlruns/229534400479627874/6630f6ea44ae40a196f91fe05dafd4c9/artifacts
+end_time: 1779553555001
+entry_point_name: ''
+experiment_id: '229534400479627874'
+lifecycle_stage: active
+run_id: 6630f6ea44ae40a196f91fe05dafd4c9
+run_name: Drift2Act_Full_20260523_2154
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1779553464130
+status: 3
+tags: []
+user_id: USER

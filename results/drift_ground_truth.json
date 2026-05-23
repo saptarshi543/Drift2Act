@@ -1,0 +1,137 @@
+{
+  "O2Sat_mean": {
+    "base_feature": "O2Sat_correlation_break",
+    "phase": "phase3",
+    "component": "correlation_breaking"
+  },
+  "O2Sat_std": {
+    "base_feature": "O2Sat_correlation_break",
+    "phase": "phase3",
+    "component": "correlation_breaking"
+  },
+  "O2Sat_min": {
+    "base_feature": "O2Sat_correlation_break",
+    "phase": "phase3",
+    "component": "correlation_breaking"
+  },
+  "O2Sat_max": {
+    "base_feature": "O2Sat_correlation_break",
+    "phase": "phase3",
+    "component": "correlation_breaking"
+  },
+  "Resp_mean": {
+    "base_feature": "Resp",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "Resp_std": {
+    "base_feature": "Resp",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "Resp_min": {
+    "base_feature": "Resp",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "Resp_max": {
+    "base_feature": "Resp",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "FiO2_mean": {
+    "base_feature": "FiO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "FiO2_std": {
+    "base_feature": "FiO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "FiO2_min": {
+    "base_feature": "FiO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "FiO2_max": {
+    "base_feature": "FiO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "PaCO2_mean": {
+    "base_feature": "PaCO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "PaCO2_std": {
+    "base_feature": "PaCO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "PaCO2_min": {
+    "base_feature": "PaCO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "PaCO2_max": {
+    "base_feature": "PaCO2",
+    "phase": "phase3",
+    "component": "severe_respiratory"
+  },
+  "WBC_mean": {
+    "base_feature": "WBC",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "WBC_std": {
+    "base_feature": "WBC",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "WBC_min": {
+    "base_feature": "WBC",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "WBC_max": {
+    "base_feature": "WBC",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Lactate_mean": {
+    "base_feature": "Lactate",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Lactate_min": {
+    "base_feature": "Lactate",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Lactate_max": {
+    "base_feature": "Lactate",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Creatinine_mean": {
+    "base_feature": "Creatinine",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Creatinine_std": {
+    "base_feature": "Creatinine",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Creatinine_min": {
+    "base_feature": "Creatinine",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  },
+  "Creatinine_max": {
+    "base_feature": "Creatinine",
+    "phase": "phase3",
+    "component": "inflammatory_upward"
+  }
+}

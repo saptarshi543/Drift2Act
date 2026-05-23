@@ -1,0 +1,9 @@
+{
+  "sadi_f1_mean": 0.7532591081292248,
+  "sadi_f1_std": 0.07183774652138004,
+  "ks_f1_mean": 0.7849608712040232,
+  "ks_f1_std": 0.06933941559400605,
+  "wilcoxon_statistic": 0.0,
+  "wilcoxon_p_value": 6.4006674708132054e-142,
+  "significant": true
+}
