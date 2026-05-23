@@ -660,12 +660,15 @@ with tab3:
         st.markdown("#### 📐 Feature Attribution Accuracy")
         st.markdown("*How well each detector identifies which specific features drifted*")
 
+        # Detect the detector/method column name
+        det_col = 'Detector' if 'Detector' in attribution_table.columns else 'Method'
+
         fig = go.Figure()
         for i, metric in enumerate(['Precision', 'Recall']):
             if metric in attribution_table.columns:
                 fig.add_trace(go.Bar(
                     name=metric,
-                    x=attribution_table['Detector'],
+                    x=attribution_table[det_col],
                     y=attribution_table[metric],
                     marker_color=['#3498db', '#2ecc71'][i],
                     text=attribution_table[metric].round(3),
@@ -875,6 +878,8 @@ with tab6:
             if attribution_table is not None:
                 st.markdown("#### Attribution Accuracy")
                 st.dataframe(attribution_table, use_container_width=True)
+            else:
+                st.info("Attribution table not available.")
     else:
         st.info("Comparison table not yet generated. Run the pipeline first.")
 
@@ -884,17 +889,18 @@ with tab6:
         st.markdown("#### 🔬 SADI Ablation Study")
         st.markdown("*Testing the contribution of each SADI component*")
 
+        # Detect column names (Config vs Configuration)
+        cfg_col = next((c for c in ablation_table.columns if c.lower().startswith('config')), ablation_table.columns[0])
+        f1_col = 'F1' if 'F1' in ablation_table.columns else ablation_table.columns[-1]
+
         fig = go.Figure(go.Bar(
-            x=ablation_table['Configuration'] if 'Configuration' in ablation_table.columns
-              else ablation_table.iloc[:, 0],
-            y=ablation_table['F1'] if 'F1' in ablation_table.columns
-              else ablation_table.iloc[:, -1],
+            x=ablation_table[cfg_col],
+            y=ablation_table[f1_col],
             marker=dict(
                 color=['#95a5a6', '#95a5a6', '#95a5a6', '#95a5a6', '#3498db'],
                 line=dict(width=1.5, color='white')
             ),
-            text=(ablation_table['F1'] if 'F1' in ablation_table.columns
-                  else ablation_table.iloc[:, -1]).round(3),
+            text=ablation_table[f1_col].round(3),
             textposition='outside',
             textfont=dict(size=13)
         ))
