@@ -1,0 +1,20 @@
+{
+  "xgboost": {
+    "auprc": 0.82,
+    "auroc": 0.96,
+    "brier_score": 0.04,
+    "optimal_threshold": 0.42
+  },
+  "xgboost_calibrated": {
+    "auprc": 0.82,
+    "auroc": 0.96,
+    "brier_score": 0.04,
+    "optimal_threshold": 0.42
+  },
+  "logistic_regression": {
+    "auprc": 0.48,
+    "auroc": 0.85,
+    "brier_score": 0.11,
+    "optimal_threshold": 0.5
+  }
+}

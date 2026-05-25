@@ -1,0 +1,182 @@
+[
+  {
+    "window_idx": 18,
+    "phase": "phase2",
+    "level": 4,
+    "action": "FULL_RETRAIN",
+    "D_total": 1.1,
+    "risk_score": 0.0336,
+    "est_auprc": 0.6952,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 4          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 18                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 1.1000                            \u2551\n\u2551  Action    : FULL_RETRAIN                      \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 19,
+    "phase": "phase2",
+    "level": 4,
+    "action": "FULL_RETRAIN",
+    "D_total": 0.95,
+    "risk_score": 0.0323,
+    "est_auprc": 0.6774,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 4          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 19                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.9500                            \u2551\n\u2551  Action    : FULL_RETRAIN                      \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 20,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5514,
+    "risk_score": 0.0158,
+    "est_auprc": 0.6834,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 20                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.5514                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 21,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.3881,
+    "risk_score": 0,
+    "est_auprc": 0.6773,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 21                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.3881                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 22,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6258,
+    "risk_score": 0.0137,
+    "est_auprc": 0.664,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 22                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.6258                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 23,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.4512,
+    "risk_score": 0.0024,
+    "est_auprc": 0.6426,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 23                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.4512                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 24,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6799,
+    "risk_score": 0.0154,
+    "est_auprc": 0.6311,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 24                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.6799                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 25,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6657,
+    "risk_score": 0.0214,
+    "est_auprc": 0.6337,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 25                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.6657                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 26,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5837,
+    "risk_score": 0.0132,
+    "est_auprc": 0.6172,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 26                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.5837                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 27,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6408,
+    "risk_score": 0.0162,
+    "est_auprc": 0.602,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 27                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.6408                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 28,
+    "phase": "phase2",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6911,
+    "risk_score": 0.0204,
+    "est_auprc": 0.5983,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 28                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.6911                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 29,
+    "phase": "phase2",
+    "level": 3,
+    "action": "PARTIAL_RETRAIN",
+    "D_total": 0.7368,
+    "risk_score": 0.0216,
+    "est_auprc": 0.5885,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 3          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 29                                \u2551\n\u2551  Phase     : phase2                            \u2551\n\u2551  D_total   : 0.7368                            \u2551\n\u2551  Action    : PARTIAL_RETRAIN                   \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 30,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5861,
+    "risk_score": 0.0159,
+    "est_auprc": 0.7324,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 30                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.5861                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 31,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5398,
+    "risk_score": 0.0192,
+    "est_auprc": 0.728,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 31                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.5398                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 35,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.6011,
+    "risk_score": 0.0126,
+    "est_auprc": 0.7101,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 35                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.6011                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 37,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5391,
+    "risk_score": 0.0169,
+    "est_auprc": 0.7279,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 37                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.5391                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 39,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5407,
+    "risk_score": 0.0136,
+    "est_auprc": 0.7205,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 39                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.5407                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  },
+  {
+    "window_idx": 41,
+    "phase": "phase3",
+    "level": 2,
+    "action": "RECALIBRATE",
+    "D_total": 0.5047,
+    "risk_score": 0.0113,
+    "est_auprc": 0.7322,
+    "alert_text": "\u2554==============================================\u2557\n\u2551  DRIFT2ACT CLINICAL ALERT - Level 2          \u2551\n\u2560==============================================\u2563\n\u2551  Window    : 41                                \u2551\n\u2551  Phase     : phase3                            \u2551\n\u2551  D_total   : 0.5047                            \u2551\n\u2551  Action    : RECALIBRATE                       \u2551\n\u255a==============================================\u255d"
+  }
+]

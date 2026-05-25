@@ -1,0 +1,42 @@
+{
+  "Lactate_mean": {
+    "base_feature": "Lactate",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "Lactate_max": {
+    "base_feature": "Lactate",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "WBC_mean": {
+    "base_feature": "WBC",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "WBC_std": {
+    "base_feature": "WBC",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "Creatinine_mean": {
+    "base_feature": "Creatinine",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "BUN_mean": {
+    "base_feature": "BUN",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "Platelets_mean": {
+    "base_feature": "Platelets",
+    "phase": "phase2",
+    "component": "laboratory"
+  },
+  "Hgb_mean": {
+    "base_feature": "Hgb",
+    "phase": "phase2",
+    "component": "laboratory"
+  }
+}

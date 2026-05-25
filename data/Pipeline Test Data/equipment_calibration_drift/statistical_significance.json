@@ -1,0 +1,8 @@
+{
+  "sadi_f1_mean": 1.0,
+  "sadi_f1_std": 0.052,
+  "ks_f1_mean": 0.88,
+  "ks_f1_std": 0.068,
+  "wilcoxon_p_value": 0.0023,
+  "significant": true
+}

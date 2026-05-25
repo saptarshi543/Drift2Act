@@ -1,0 +1,4 @@
+Method,Precision,Recall
+SADI (ours),0.8,0.1
+KS Test,0.3,0.4
+PSI,0.35,0.3

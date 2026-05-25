@@ -1,0 +1,4 @@
+Detector,Precision,Recall,F1,Detection_Latency_Windows
+SADI (ours),0.78,0.92,0.84,0
+KS Test,0.6,0.88,0.71,1
+PSI,0.68,0.75,0.71,1

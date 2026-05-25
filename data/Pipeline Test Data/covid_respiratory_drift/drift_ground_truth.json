@@ -1,0 +1,37 @@
+{
+  "O2Sat_mean": {
+    "base_feature": "O2Sat",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "O2Sat_std": {
+    "base_feature": "O2Sat",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "Resp_mean": {
+    "base_feature": "Resp",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "Resp_std": {
+    "base_feature": "Resp",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "FiO2_mean": {
+    "base_feature": "FiO2",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "PaCO2_mean": {
+    "base_feature": "PaCO2",
+    "phase": "phase2",
+    "component": "respiratory"
+  },
+  "PaCO2_std": {
+    "base_feature": "PaCO2",
+    "phase": "phase2",
+    "component": "respiratory"
+  }
+}
