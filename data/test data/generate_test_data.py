@@ -59,14 +59,32 @@ SPARSITY = {
 
 COLUMNS = ['Patient_ID', 'Hour'] + list(REF.keys()) + ['Age', 'Gender', 'Unit1', 'Unit2', 'HospAdmTime', 'ICULOS', 'SepsisLabel']
 
+# Correlation map (latent severity theta effect)
+CORR = {
+    'HR': 0.4, 'Temp': 0.2, 'Resp': 0.4, 'O2Sat': -0.2,
+    'MAP': -0.4, 'SBP': -0.4, 'DBP': -0.3,
+    'Creatinine': 0.3, 'Lactate': 0.4, 'WBC': 0.3, 'BUN': 0.3,
+    'pH': -0.3, 'BaseExcess': -0.3, 'HCO3': -0.3,
+    'Glucose': 0.1, 'Platelets': -0.2, 'FiO2': 0.2, 'PaCO2': 0.2,
+}
 
 def generate_batch(n_patients, shifts=None, label_flip_rate=0.0, name="batch"):
-    """Generate a batch of hourly ICU data.
-    shifts: dict of {feature: (add_mean, mult_factor)} to apply drift
-    """
+    """Generate a batch of hourly ICU data with clinical panel draws."""
     if shifts is None:
         shifts = {}
     rows = []
+    
+    # Feature group categorizations
+    vitals = {'HR', 'O2Sat', 'Temp', 'SBP', 'MAP', 'DBP', 'Resp'}
+    daily_labs = {'BUN', 'Calcium', 'Chloride', 'Creatinine', 'Glucose', 'Magnesium', 
+                  'Phosphate', 'Potassium', 'Hct', 'Hgb', 'PTT', 'WBC', 'Platelets'}
+    lfts = {'AST', 'Alkalinephos', 'Bilirubin_total', 'Bilirubin_direct'}
+    abg = {'pH', 'PaCO2', 'BaseExcess', 'HCO3', 'SaO2', 'FiO2'}
+    lactate = {'Lactate'}
+    troponin = {'TroponinI'}
+    fibrinogen = {'Fibrinogen'}
+    etco2 = {'EtCO2'}
+
     for pid in range(n_patients):
         n_hours = np.random.randint(12, 72)
         age = np.clip(np.random.normal(61.88, 16.03), 18, 89)
@@ -76,19 +94,55 @@ def generate_batch(n_patients, shifts=None, label_flip_rate=0.0, name="batch"):
         is_sepsis = np.random.random() < 0.087
         sepsis_onset = np.random.randint(max(6, n_hours // 2), n_hours) if is_sepsis else n_hours + 100
 
-        # Per-patient baseline (slight patient-to-patient variation)
-        patient_offsets = {feat: np.random.normal(0, ref['std'] * 0.3) for feat, ref in REF.items()}
+        # Draw patient-specific mean and volatility
+        theta = np.random.normal(0, 0.8)  # Latent patient severity factor
+        p_means = {}
+        p_vols = {}
+        for feat, ref in REF.items():
+            c = CORR.get(feat, 0.0)
+            p_means[feat] = np.random.normal(ref['mean'] + c * theta * ref['std'], ref['std'] * np.sqrt(1 - c**2) * 0.9)
+            p_vols[feat] = np.maximum(ref['std'] * 0.1, np.random.normal(ref['std'] * 0.55, ref['std'] * 0.15))
+
+        # Panel ordering flags for this patient
+        has_daily_labs = np.random.random() < 0.97
+        has_lft_labs = np.random.random() < 0.28
+        has_abg_labs = np.random.random() < 0.62
+        has_lactate = np.random.random() < 0.40
+        has_troponin = np.random.random() < 0.03
+        has_fibrinogen = np.random.random() < 0.13
+
+        # Lab draw hours (draw panel every 24 hours, starting at hour 6)
+        draw_hours = set(range(6, n_hours, 24))
 
         for h in range(n_hours):
             row = {'Patient_ID': pid, 'Hour': h}
 
             for feat, ref in REF.items():
-                if np.random.random() > SPARSITY.get(feat, 0.5):
+                # Sparsity / Draw check
+                is_observed = False
+                if feat in vitals:
+                    is_observed = np.random.random() < 0.99
+                elif feat in daily_labs:
+                    is_observed = (h in draw_hours) and has_daily_labs
+                elif feat in lfts:
+                    is_observed = (h in draw_hours) and has_lft_labs
+                elif feat in abg:
+                    is_observed = (h in draw_hours) and has_abg_labs
+                elif feat in lactate:
+                    is_observed = (h in draw_hours) and has_lactate
+                elif feat in troponin:
+                    is_observed = (h in draw_hours) and has_troponin
+                elif feat in fibrinogen:
+                    is_observed = (h in draw_hours) and has_fibrinogen
+                elif feat in etco2:
+                    is_observed = np.random.random() < 0.01
+
+                if not is_observed:
                     row[feat] = np.nan
                     continue
 
-                base = ref['mean'] + patient_offsets[feat]
-                noise = np.random.normal(0, ref['std'] * 0.15)  # hourly noise
+                base = p_means[feat]
+                noise = np.random.normal(0, p_vols[feat])
 
                 # Sepsis effect near onset
                 if is_sepsis and h >= sepsis_onset - 4:
@@ -114,6 +168,13 @@ def generate_batch(n_patients, shifts=None, label_flip_rate=0.0, name="batch"):
                 elif feat == 'FiO2': val = np.clip(val, 0.21, 1.0)
                 elif feat in ('SBP', 'MAP', 'DBP'): val = max(20, val)
                 elif feat == 'Resp': val = max(5, val)
+
+                # General clipping to keep positive features positive
+                if feat in ('AST', 'BUN', 'Alkalinephos', 'Calcium', 'Chloride', 'Creatinine', 
+                            'Bilirubin_direct', 'Glucose', 'Lactate', 'Magnesium', 'Phosphate', 
+                            'Potassium', 'Bilirubin_total', 'TroponinI', 'Hct', 'Hgb', 'PTT', 'WBC', 
+                            'Fibrinogen', 'Platelets'):
+                    val = max(0.01, val)
 
                 row[feat] = round(val, 2)
 

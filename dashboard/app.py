@@ -173,6 +173,40 @@ def get_recommendation(d_total, top_features):
                 "CRITICAL", "Immediately flag for clinical review. Full model retrain required before continued use.")
 
 
+def get_severity_upload(d_total):
+    if d_total < 0.21:   return 'NOMINAL',  '#2ecc71', 'nominal'
+    elif d_total < 0.25: return 'MODERATE', '#f1c40f', 'moderate'
+    elif d_total < 0.30: return 'HIGH',     '#e67e22', 'high'
+    else:                return 'SEVERE',   '#e74c3c', 'severe'
+
+
+def get_recommendation_upload(d_total, top_features):
+    n = len(top_features)
+    if d_total < 0.21:
+        return ("✔️ No Action Required",
+                "Your sepsis prediction model is performing within expected parameters. "
+                "No feature distributions have shifted significantly from the training baseline.",
+                "LOW", "Continue routine monitoring on the next data batch.")
+    elif d_total < 0.25:
+        feats = ", ".join(top_features[:3])
+        return ("⚠️ Recalibration Recommended",
+                f"Your sepsis model is showing moderate drift in {n} feature(s) ({feats}). "
+                "We recommend running model recalibration on this batch.",
+                "MEDIUM", "Recalibrate the calibration layer.")
+    elif d_total < 0.30:
+        feats = ", ".join(top_features[:3])
+        return ("🚨 Significant Drift Warning",
+                f"Your sepsis model is showing significant drift in {n} feature(s) ({feats}). "
+                "We recommend retraining the calibration layer on recent patient cohorts.",
+                "HIGH", "Retrain Calibration.")
+    else:
+        feats = ", ".join(top_features[:3])
+        return ("🔥 Severe Pipeline Drift",
+                f"Critical distribution shift detected across key predictors ({feats}). "
+                "Urgent full retraining of XGBoost classification models is required.",
+                "URGENT", "Urgent Retrain")
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # DATA LOADING (for Review Mode)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -295,13 +329,22 @@ def run_drift_analysis(df_uploaded):
     report['format'] = fmt
 
     # 3. Identify feature columns (intersection with reference)
-    ref_feature_cols = [c for c in ref_data.columns if c.endswith(('_mean', '_std', '_min', '_max'))]
-    upload_feature_cols = [c for c in df_patient.columns if c in ref_feature_cols]
+    import json
+    metadata_path = PROJECT_ROOT / 'data' / 'processed' / 'preprocessing_metadata.json'
+    if metadata_path.exists():
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            model_features = metadata.get('feature_cols', [])
+        except Exception:
+            model_features = []
+    else:
+        model_features = []
 
-    if len(upload_feature_cols) < 10:
-        report['message'] = f"Only {len(upload_feature_cols)} matching features found. Need at least 10."
-        return report
+    if not model_features:
+        model_features = [c for c in ref_data.columns if c.endswith(('_mean', '_std', '_min', '_max'))] + ['Age', 'Gender', 'ICULOS']
 
+    upload_feature_cols = model_features
     report['n_features'] = len(upload_feature_cols)
 
     # 4. Prepare data
@@ -310,7 +353,14 @@ def run_drift_analysis(df_uploaded):
         ref_phase1 = ref_data
 
     X_ref = ref_phase1[upload_feature_cols].copy()
-    X_new = df_patient[upload_feature_cols].copy()
+    
+    # Align X_new columns
+    X_new = pd.DataFrame(index=df_patient.index)
+    for col in upload_feature_cols:
+        if col in df_patient.columns:
+            X_new[col] = df_patient[col]
+        else:
+            X_new[col] = np.nan
 
     # Fill NaN for analysis
     X_ref = X_ref.fillna(X_ref.median())
@@ -391,9 +441,9 @@ def run_drift_analysis(df_uploaded):
 
             # Model predictions
             try:
-                preds = model.predict_proba(X_new_scaled)[:, 1]
+                preds = model.predict_proba(X_new_scaled.values)[:, 1]
             except Exception:
-                preds = base_model.predict_proba(X_new_scaled)[:, 1]
+                preds = base_model.predict_proba(X_new_scaled.values)[:, 1]
             report['predictions'] = preds
 
             ref_preds_path = PROJECT_ROOT / 'results' / 'ref_predictions.npy'
@@ -401,9 +451,9 @@ def run_drift_analysis(df_uploaded):
                 ref_preds = np.load(ref_preds_path)
             else:
                 try:
-                    ref_preds = model.predict_proba(X_ref_scaled)[:, 1]
+                    ref_preds = model.predict_proba(X_ref_scaled.values)[:, 1]
                 except Exception:
-                    ref_preds = base_model.predict_proba(X_ref_scaled)[:, 1]
+                    ref_preds = base_model.predict_proba(X_ref_scaled.values)[:, 1]
 
             report['mean_pred'] = float(np.mean(preds))
             report['ref_mean_pred'] = float(np.mean(ref_preds))
@@ -413,7 +463,7 @@ def run_drift_analysis(df_uploaded):
             n_shap = min(100, len(X_new_scaled))
             X_shap = X_new_scaled.sample(n=n_shap, random_state=42) if len(X_new_scaled) > n_shap else X_new_scaled
             explainer = shap.TreeExplainer(base_model)
-            shap_vals = explainer.shap_values(X_shap)
+            shap_vals = explainer.shap_values(X_shap.values)
             if isinstance(shap_vals, list):
                 shap_vals = shap_vals[1]
 
@@ -432,6 +482,7 @@ def run_drift_analysis(df_uploaded):
                 new_fp[feat]['rank'] = rank
 
             # SADI computation
+            n_fp_feats = max(len(upload_feature_cols), 1)
             for feat in upload_feature_cols:
                 if feat in fingerprint and feat in new_fp:
                     ref_rank = fingerprint[feat].get('rank', 0)
@@ -441,10 +492,11 @@ def run_drift_analysis(df_uploaded):
                     ref_abs = fingerprint[feat].get('mean_abs', 0)
                     new_abs = new_fp[feat].get('mean_abs', 0)
 
-                    # KL approximation using mean_abs difference
-                    kl_approx = abs(new_abs - ref_abs) / max(ref_abs, 1e-6)
-                    rank_shift = abs(new_rank - ref_rank) / max(len(upload_feature_cols), 1)
-                    dir_flip = 1.0 if (ref_mean > 0) != (new_mean > 0) and abs(ref_mean) > 1e-4 else 0.0
+                    # KL approximation — capped to prevent low-importance features
+                    # from creating huge ratios
+                    kl_approx = min(abs(new_abs - ref_abs) / max(ref_abs, 1e-3), 2.0)
+                    rank_shift = abs(new_rank - ref_rank) / n_fp_feats
+                    dir_flip = 1.0 if (ref_mean > 0) != (new_mean > 0) and abs(ref_mean) > 1e-3 else 0.0
 
                     sadi = 0.5 * kl_approx + 0.3 * rank_shift + 0.2 * dir_flip
                     sadi_scores[feat] = {
@@ -458,41 +510,66 @@ def run_drift_analysis(df_uploaded):
             report['top_sadi_features'] = top_sadi_features
             report['new_fingerprint'] = new_fp
 
-            # Compute D_total
-            top_n = min(10, len(top_sadi_features))
-            d_shap = np.mean([sadi_scores[f]['sadi'] for f in top_sadi_features[:top_n]]) if top_n > 0 else 0
-            d_feature = np.mean([psi_results.get(f, 0) for f in upload_feature_cols]) if psi_results else 0
+            # Compute D_total with proper normalization
+            # Select top-10 features by BASELINE reference importance for SADI (filters noise)
+            top_by_baseline = sorted(
+                [f for f in upload_feature_cols if f in fingerprint],
+                key=lambda f: fingerprint[f].get('mean_abs', 0),
+                reverse=True
+            )
+            top_n = min(10, len(top_by_baseline))
+            d_shap = np.mean([sadi_scores[f]['sadi'] for f in top_by_baseline[:top_n]]) if top_n > 0 else 0
+
+            # d_feature: fraction of features with KS statistic > 0.3
+            ks_stats = [v['statistic'] for v in ks_results.values()]
+            n_ks_high = sum(1 for s in ks_stats if s > 0.3)
+            d_feature = n_ks_high / max(len(ks_stats), 1)
 
             from scipy.stats import wasserstein_distance
             try:
                 d_conf = wasserstein_distance(ref_preds, preds)
             except Exception:
                 d_conf = abs(np.mean(preds) - np.mean(ref_preds))
+            # Cap d_conf contribution
+            d_conf = min(d_conf, 1.0)
 
-            d_total = 0.5 * d_shap + 0.3 * d_feature + 0.2 * d_conf
+            # D_total: SHAP-primary weighting
+            # SADI measures how the model's *explanations* change — most reliable signal
+            d_total = 0.60 * min(d_shap, 1.5) + 0.15 * d_feature + 0.25 * d_conf
             report['d_total'] = float(d_total)
             report['d_shap'] = float(d_shap)
             report['d_feature'] = float(d_feature)
+            
+            raw_psi = np.mean(list(psi_results.values())) if psi_results else 0.0
+            report['d_feature_raw_psi'] = float(raw_psi)
             report['d_confidence'] = float(d_conf)
             report['has_shap'] = True
 
         except Exception as e:
             report['shap_error'] = str(e)
             report['has_shap'] = False
-            # Fallback D_total from KS/PSI only
-            mean_psi = np.mean(list(psi_results.values())) if psi_results else 0
-            ks_frac = len(ks_flagged) / max(len(upload_feature_cols), 1)
-            report['d_total'] = 0.6 * mean_psi + 0.4 * ks_frac
+            # Fallback D_total from KS only
+            ks_stats = [v['statistic'] for v in ks_results.values()]
+            n_ks_high = sum(1 for s in ks_stats if s > 0.3)
+            d_feature = n_ks_high / max(len(ks_stats), 1)
+            bonf_thresh = 0.05 / max(len(upload_feature_cols), 1)
+            ks_sig = sum(1 for f in ks_results.values() if f['p_value'] < bonf_thresh)
+            ks_frac = ks_sig / max(len(upload_feature_cols), 1)
+            report['d_total'] = 0.6 * d_feature + 0.4 * ks_frac
             report['d_shap'] = 0
-            report['d_feature'] = mean_psi
+            report['d_feature'] = d_feature
             report['d_confidence'] = 0
     else:
         report['has_shap'] = False
-        mean_psi = np.mean(list(psi_results.values())) if psi_results else 0
-        ks_frac = len(ks_flagged) / max(len(upload_feature_cols), 1)
-        report['d_total'] = 0.6 * mean_psi + 0.4 * ks_frac
+        ks_stats_fb = [v['statistic'] for v in ks_results.values()]
+        n_ks_high_fb = sum(1 for s in ks_stats_fb if s > 0.3)
+        d_feature = n_ks_high_fb / max(len(ks_stats_fb), 1)
+        bonf_thresh = 0.05 / max(len(upload_feature_cols), 1)
+        ks_sig = sum(1 for f in ks_results.values() if f['p_value'] < bonf_thresh)
+        ks_frac = ks_sig / max(len(upload_feature_cols), 1)
+        report['d_total'] = 0.6 * d_feature + 0.4 * ks_frac
         report['d_shap'] = 0
-        report['d_feature'] = mean_psi
+        report['d_feature'] = d_feature
         report['d_confidence'] = 0
 
     # 8. Fairness (if Gender available)
@@ -622,10 +699,10 @@ def render_upload_mode():
 def render_drift_report(report, filename):
     """Render the one-page drift analysis report."""
     d_total = report.get('d_total', 0)
-    severity, sev_color, sev_class = get_severity(d_total)
+    severity, sev_color, sev_class = get_severity_upload(d_total)
 
     top_features = report.get('top_sadi_features', [f[0] for f in report.get('ks_flagged', [])])[:10]
-    title, summary, priority, action = get_recommendation(d_total, top_features)
+    title, summary, priority, action = get_recommendation_upload(d_total, top_features)
 
     # ── Status Banner ─────────────────────────────────────────────────────
     st.markdown(f"""
