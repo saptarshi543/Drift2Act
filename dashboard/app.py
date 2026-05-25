@@ -1136,6 +1136,569 @@ def render_review_mode():
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# PIPELINE UPLOAD MODE (TECHNICAL)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def parse_pipeline_files(uploaded_files):
+    """Parse uploaded pipeline result files into a data dict."""
+    data = {}
+    for f in uploaded_files:
+        name = f.name.lower()
+        content = f.read()
+        f.seek(0)
+        try:
+            if name == 'drift2act_results.csv':
+                data['results'] = pd.read_csv(f)
+            elif name == 'baseline_metrics.json':
+                data['baseline'] = json.loads(content)
+            elif name == 'alert_log.json':
+                data['alerts'] = json.loads(content)
+            elif name == 'drift_ground_truth.json':
+                data['drift_gt'] = json.loads(content)
+            elif name == 'statistical_significance.json':
+                data['stat_sig'] = json.loads(content)
+            elif name == 'table1_detector_comparison.csv':
+                data['table1'] = pd.read_csv(f)
+            elif name == 'table2_attribution_accuracy.csv':
+                data['table2'] = pd.read_csv(f)
+            elif name == 'table3_ablation.csv':
+                data['table3'] = pd.read_csv(f)
+            elif name == 'table4_fairness.csv':
+                data['table4'] = pd.read_csv(f)
+        except Exception as e:
+            st.warning(f"Could not parse {f.name}: {e}")
+    return data
+
+
+def parse_zip_pipeline(uploaded_zip):
+    """Parse a ZIP archive containing pipeline results."""
+    import zipfile, io
+    data = {}
+    with zipfile.ZipFile(io.BytesIO(uploaded_zip.read()), 'r') as zf:
+        for info in zf.infolist():
+            basename = info.filename.split('/')[-1].lower()
+            if info.is_dir() or not basename:
+                continue
+            raw = zf.read(info.filename)
+            try:
+                if basename == 'drift2act_results.csv':
+                    data['results'] = pd.read_csv(io.BytesIO(raw))
+                elif basename == 'baseline_metrics.json':
+                    data['baseline'] = json.loads(raw)
+                elif basename == 'alert_log.json':
+                    data['alerts'] = json.loads(raw)
+                elif basename == 'drift_ground_truth.json':
+                    data['drift_gt'] = json.loads(raw)
+                elif basename == 'statistical_significance.json':
+                    data['stat_sig'] = json.loads(raw)
+                elif basename == 'table1_detector_comparison.csv':
+                    data['table1'] = pd.read_csv(io.BytesIO(raw))
+                elif basename == 'table2_attribution_accuracy.csv':
+                    data['table2'] = pd.read_csv(io.BytesIO(raw))
+                elif basename == 'table3_ablation.csv':
+                    data['table3'] = pd.read_csv(io.BytesIO(raw))
+                elif basename == 'table4_fairness.csv':
+                    data['table4'] = pd.read_csv(io.BytesIO(raw))
+            except Exception as e:
+                st.warning(f"Could not parse {info.filename}: {e}")
+    return data
+
+
+def render_pipeline_upload_mode():
+    st.markdown("""
+    <div class="main-header">
+        <h1>🔧 Pipeline Analysis — Technical View</h1>
+        <p>Upload pipeline output files for full diagnostic analysis · For MLOps engineers and clinical data scientists</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Upload section
+    upload_method = st.radio("Upload method", ["📦 ZIP archive", "📄 Individual files"], horizontal=True)
+
+    pdata = None
+    if upload_method == "📦 ZIP archive":
+        st.markdown("Upload a ZIP containing pipeline outputs (`drift2act_results.csv`, `baseline_metrics.json`, tables, etc.)")
+        zf = st.file_uploader("Upload pipeline ZIP", type=['zip'], key='pipeline_zip')
+        if zf:
+            pdata = parse_zip_pipeline(zf)
+    else:
+        st.markdown("Upload individual pipeline output files. At minimum, `drift2act_results.csv` is required.")
+        files = st.file_uploader("Upload pipeline files", type=['csv', 'json'],
+                                accept_multiple_files=True, key='pipeline_files')
+        if files:
+            pdata = parse_pipeline_files(files)
+
+    if pdata is None or 'results' not in pdata:
+        with st.expander("📋 Expected files", expanded=False):
+            st.markdown("""
+            | File | Required | Description |
+            |------|----------|-------------|
+            | `drift2act_results.csv` | ✅ Yes | Per-window drift scores, interventions, fairness |
+            | `baseline_metrics.json` | Optional | Model AUPRC, AUROC, Brier score |
+            | `alert_log.json` | Optional | Clinical alert history |
+            | `drift_ground_truth.json` | Optional | Known drifted features |
+            | `statistical_significance.json` | Optional | Bootstrap test results |
+            | `table1_detector_comparison.csv` | Optional | SADI vs KS vs PSI |
+            | `table2_attribution_accuracy.csv` | Optional | Feature attribution |
+            | `table3_ablation.csv` | Optional | SADI component ablation |
+            | `table4_fairness.csv` | Optional | Phase-level fairness |
+            """)
+        return
+
+    # ── Parse data ────────────────────────────────────────────────────────
+    df = pdata['results']
+    baseline = pdata.get('baseline', {})
+    alerts = pdata.get('alerts', [])
+    drift_gt = pdata.get('drift_gt', {})
+    stat_sig = pdata.get('stat_sig', {})
+    t1 = pdata.get('table1')
+    t2 = pdata.get('table2')
+    t3 = pdata.get('table3')
+    t4 = pdata.get('table4')
+
+    st.success(f"✅ Loaded pipeline: **{len(df)} windows** · "
+               f"{df['true_phase'].nunique()} phases · "
+               f"{len(pdata)} file(s) parsed")
+
+    # ── Sidebar controls ──────────────────────────────────────────────────
+    with st.sidebar:
+        st.markdown("### 🔧 Pipeline Controls")
+        thresh = st.slider("Drift Threshold", 0.1, 2.0, 0.30, 0.05, key='p_thresh')
+        wrange = st.slider("Window Range", 0, int(df['window_num'].max()),
+                          (0, int(df['window_num'].max())), key='p_wrange')
+        phases = st.multiselect("Phases", df['true_phase'].unique().tolist(),
+                               default=df['true_phase'].unique().tolist(), key='p_phases')
+        st.markdown("---")
+        st.markdown("### 📋 Loaded Files")
+        file_icons = {'results': '📊', 'baseline': '🧠', 'alerts': '🚨',
+                     'drift_gt': '🎯', 'stat_sig': '📈', 'table1': '📋',
+                     'table2': '📋', 'table3': '📋', 'table4': '📋'}
+        for k in pdata:
+            st.markdown(f"{file_icons.get(k, '📄')} `{k}`")
+
+    fdf = df[(df['window_num'] >= wrange[0]) & (df['window_num'] <= wrange[1]) &
+             (df['true_phase'].isin(phases))].copy()
+
+    if len(fdf) == 0:
+        st.warning("No data in selected range.")
+        return
+
+    # ═════════════════════════════════════════════════════════════════════
+    # KPI ROW
+    # ═════════════════════════════════════════════════════════════════════
+    latest = fdf.iloc[-1]
+    d_total = latest['D_total']
+    sev, sev_color, sev_class = get_severity(d_total)
+    lv = int(latest['intervention_level'])
+    ln = {0: 'NO_ACTION', 1: 'ALERT', 2: 'RECALIBRATE', 3: 'PARTIAL_RETRAIN', 4: 'FULL_RETRAIN'}
+    lc = {0: '#2ecc71', 1: '#3498db', 2: '#f1c40f', 3: '#e67e22', 4: '#e74c3c'}
+    xgb = baseline.get('xgboost', baseline.get('xgboost_calibrated', {}))
+
+    st.markdown(f"""
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">D_total (Latest)</div>
+            <div class="kpi-value" style="color:{sev_color}">{d_total:.4f}</div>
+            <div class="kpi-delta" style="color:{sev_color}">● {sev}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">D_SHAP</div>
+            <div class="kpi-value">{latest['D_shap']:.4f}</div>
+            <div class="kpi-delta" style="color:#8888aa">Explanation component</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Adversarial AUROC</div>
+            <div class="kpi-value">{latest['adv_score']:.4f}</div>
+            <div class="kpi-delta" style="color:#8888aa">Domain classifier</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Intervention</div>
+            <div class="kpi-value" style="color:{lc[lv]}">L{lv}</div>
+            <div class="kpi-delta" style="color:{lc[lv]}">{ln[lv]}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Baseline AUPRC</div>
+            <div class="kpi-value">{xgb.get('auprc', latest.get('baseline_auprc', 0)):.4f}</div>
+            <div class="kpi-delta" style="color:#8888aa">Reference</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ═════════════════════════════════════════════════════════════════════
+    # TABS
+    # ═════════════════════════════════════════════════════════════════════
+    tabs = st.tabs([
+        "📈 Overview", "🔬 Per-Window Data", "📐 SADI Components",
+        "🔥 Feature Attribution", "🧠 Model Diagnostics",
+        "📊 Detector Comparison", "⚖️ Fairness Audit", "🚨 Alert Timeline"
+    ])
+
+    # ── Tab: Overview ─────────────────────────────────────────────────────
+    with tabs[0]:
+        st.subheader("Pipeline Overview")
+
+        fig = make_subplots(rows=3, cols=1, row_heights=[0.45, 0.30, 0.25],
+                           shared_xaxes=True, vertical_spacing=0.06,
+                           subplot_titles=("D_total Composite", "D_SHAP + Adversarial", "Intervention Level"))
+        for r in [1, 2, 3]:
+            add_phase_shading(fig, fdf, row=r, col=1)
+
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['D_total'], mode='lines',
+                                name='D_total', line=dict(color='#3498db', width=3),
+                                fill='tozeroy', fillcolor='rgba(52,152,219,0.08)'), row=1, col=1)
+        fig.add_hline(y=thresh, line_dash="dash", line_color="#e74c3c",
+                      annotation_text=f"Threshold ({thresh})", row=1, col=1)
+
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['D_shap'], mode='lines',
+                                name='D_SHAP', line=dict(color='#9b59b6', width=2)), row=2, col=1)
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['adv_score'], mode='lines',
+                                name='Adv. AUROC', line=dict(color='#e67e22', width=2, dash='dot')), row=2, col=1)
+        fig.add_hline(y=0.5, line_dash="dash", line_color="#555", row=2, col=1)
+
+        int_colors = [lc.get(int(v), '#888') for v in fdf['intervention_level']]
+        fig.add_trace(go.Bar(x=fdf['window_num'], y=fdf['intervention_level'],
+                            name='Intervention', marker_color=int_colors), row=3, col=1)
+        fig.update_yaxes(tickvals=[0,1,2,3,4], ticktext=['None','Alert','Recal','Partial','Full'], row=3, col=1)
+
+        fig.update_layout(height=700, template="plotly_dark",
+                         legend=dict(orientation="h", y=1.03, x=0.5, xanchor="center"),
+                         margin=dict(l=50, r=30, t=70, b=30))
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Phase summary table
+        st.markdown("#### Phase Summary")
+        phase_summary = []
+        for phase in sorted(fdf['true_phase'].unique()):
+            pdata_ph = fdf[fdf['true_phase'] == phase]
+            phase_summary.append({
+                'Phase': phase, 'Windows': len(pdata_ph),
+                'D_total (mean)': round(pdata_ph['D_total'].mean(), 4),
+                'D_total (max)': round(pdata_ph['D_total'].max(), 4),
+                'D_SHAP (mean)': round(pdata_ph['D_shap'].mean(), 4),
+                'Adv Score (mean)': round(pdata_ph['adv_score'].mean(), 4),
+                'Risk (mean)': round(pdata_ph['risk_score'].mean(), 4),
+                'Est AUPRC (mean)': round(pdata_ph['est_auprc'].mean(), 4),
+                'Max Intervention': int(pdata_ph['intervention_level'].max()),
+            })
+        st.dataframe(pd.DataFrame(phase_summary), use_container_width=True)
+
+    # ── Tab: Per-Window Data ──────────────────────────────────────────────
+    with tabs[1]:
+        st.subheader("Per-Window Detailed Data")
+        st.markdown("*Raw pipeline output — every window's metrics, flags, and actions*")
+
+        # Column selector
+        all_cols = list(fdf.columns)
+        numeric_cols = [c for c in all_cols if fdf[c].dtype in ['float64', 'int64', 'bool']]
+        default_show = ['window_num', 'true_phase', 'D_total', 'D_shap', 'adv_score',
+                       'drift_belief', 'risk_score', 'est_auprc', 'intervention_level',
+                       'intervention_action', 'dpd', 'eod']
+        show_cols = st.multiselect("Columns to display", all_cols,
+                                  default=[c for c in default_show if c in all_cols], key='pw_cols')
+
+        if show_cols:
+            styled_df = fdf[show_cols].copy()
+            st.dataframe(styled_df, use_container_width=True, height=500)
+
+            # Statistics
+            st.markdown("#### Descriptive Statistics")
+            stat_cols = [c for c in show_cols if c in numeric_cols]
+            if stat_cols:
+                st.dataframe(fdf[stat_cols].describe().round(4), use_container_width=True)
+
+        # Download
+        csv_data = fdf.to_csv(index=False)
+        st.download_button("📥 Download filtered data as CSV", csv_data,
+                          "drift2act_filtered.csv", "text/csv", key='dl_csv')
+
+    # ── Tab: SADI Components ─────────────────────────────────────────────
+    with tabs[2]:
+        st.subheader("SADI Component Breakdown")
+
+        # D_total decomposition
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['D_total'], mode='lines',
+                                name='D_total', line=dict(color='#3498db', width=3)))
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['D_shap'], mode='lines',
+                                name='D_SHAP (α=0.5)', line=dict(color='#9b59b6', width=2)))
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['drift_belief'], mode='lines',
+                                name='Drift Belief', line=dict(color='#2ecc71', width=1.5, dash='dot')))
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['risk_score'], mode='lines',
+                                name='Risk Score', line=dict(color='#e74c3c', width=1.5, dash='dash')))
+        add_phase_shading(fig, fdf)
+        fig.add_hline(y=thresh, line_dash="dash", line_color="#e74c3c", opacity=0.5)
+        fig.update_layout(height=450, template="plotly_dark", xaxis_title="Window", yaxis_title="Score",
+                         legend=dict(orientation="h", y=1.05, x=0.5, xanchor="center"))
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Correlation matrix
+        st.markdown("#### Component Correlations")
+        corr_cols = ['D_total', 'D_shap', 'adv_score', 'drift_belief', 'risk_score', 'est_auprc']
+        corr_cols = [c for c in corr_cols if c in fdf.columns]
+        corr = fdf[corr_cols].corr().round(3)
+        fig = go.Figure(go.Heatmap(
+            z=corr.values, x=corr.columns, y=corr.columns,
+            colorscale='RdBu_r', zmid=0, text=corr.values, texttemplate="%{text}",
+            colorbar=dict(title="Corr", len=0.6)))
+        fig.update_layout(height=400, template="plotly_dark", margin=dict(l=100))
+        st.plotly_chart(fig, use_container_width=True)
+
+        # SADI formula reference
+        with st.expander("📚 SADI Formula Reference"):
+            st.markdown("""
+            **Per-feature SADI:**
+            ```
+            SADI(f, t) = α · KL(S_{t-1}(f) || S_t(f)) + β · |rank_t(f) - rank_{t-1}(f)| / N + γ · 𝟙[sign(μ_{t-1}(f)) ≠ sign(μ_t(f))]
+            ```
+            Default weights: `α=0.5, β=0.3, γ=0.2`
+
+            **Overall drift score:**
+            ```
+            D_total = α · D_SHAP + β · D_feature + γ · D_confidence
+            ```
+            Where:
+            - `D_SHAP` = mean SADI of top-10 features
+            - `D_feature` = mean PSI across features
+            - `D_confidence` = Wasserstein distance of prediction distributions
+            """)
+
+    # ── Tab: Feature Attribution ──────────────────────────────────────────
+    with tabs[3]:
+        st.subheader("Feature-Level Attribution")
+
+        feature_data = []
+        for _, row in fdf.iterrows():
+            feats = row.get('top_sadi_features', '[]')
+            if isinstance(feats, str):
+                try: feats = json.loads(feats)
+                except: feats = []
+            for rank, feat in enumerate(feats):
+                feature_data.append({'window': row['window_num'], 'feature': feat,
+                                    'rank': rank + 1, 'phase': row['true_phase']})
+
+        if feature_data:
+            feat_df = pd.DataFrame(feature_data)
+            freq = feat_df['feature'].value_counts()
+
+            c1, c2 = st.columns(2)
+            with c1:
+                fig = go.Figure(go.Bar(x=freq.values[:15], y=freq.index[:15], orientation='h',
+                                     marker=dict(color=freq.values[:15], colorscale='YlOrRd', showscale=True),
+                                     text=freq.values[:15], textposition='outside'))
+                fig.update_layout(title="Feature Flag Frequency", height=450, template="plotly_dark",
+                                yaxis=dict(autorange="reversed"), margin=dict(l=160, r=60))
+                st.plotly_chart(fig, use_container_width=True)
+
+            with c2:
+                top = freq.head(12).index.tolist()
+                hm = feat_df[feat_df['feature'].isin(top)].pivot_table(
+                    index='feature', columns='window', values='rank', aggfunc='min', fill_value=0).reindex(top)
+                fig = go.Figure(go.Heatmap(
+                    z=hm.values, x=[f"W{c}" for c in hm.columns], y=hm.index,
+                    colorscale=[[0,'#1a1a2e'],[0.2,'#2ecc71'],[0.5,'#f1c40f'],[1,'#e74c3c']],
+                    text=hm.values, texttemplate="%{text}"))
+                fig.update_layout(title="Feature Rank Across Windows", height=450, template="plotly_dark",
+                                margin=dict(l=160), xaxis=dict(tickangle=-45))
+                st.plotly_chart(fig, use_container_width=True)
+
+            # KS / PSI flags
+            st.markdown("#### Statistical Test Flags")
+            ks_data = []
+            for _, row in fdf.iterrows():
+                ks_f = row.get('ks_flagged_features', '[]')
+                psi_f = row.get('psi_flagged_features', '[]')
+                if isinstance(ks_f, str):
+                    try: ks_f = json.loads(ks_f)
+                    except: ks_f = []
+                if isinstance(psi_f, str):
+                    try: psi_f = json.loads(psi_f)
+                    except: psi_f = []
+                ks_data.append({'window': row['window_num'], 'KS flagged': len(ks_f),
+                               'PSI flagged': len(psi_f), 'KS detected': row.get('ks_detected', False),
+                               'PSI detected': row.get('psi_detected', False)})
+            st.dataframe(pd.DataFrame(ks_data), use_container_width=True, height=300)
+
+            # Ground truth comparison
+            if drift_gt:
+                st.markdown("#### 🎯 Ground Truth vs Detection")
+                gt_f = set(drift_gt.keys())
+                det_f = set(freq.index)
+                tp = gt_f & det_f; fp = det_f - gt_f; fn = gt_f - det_f
+                prec = len(tp) / max(len(tp) + len(fp), 1)
+                rec = len(tp) / max(len(tp) + len(fn), 1)
+                f1 = 2 * prec * rec / max(prec + rec, 1e-6)
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("TP", len(tp)); c2.metric("FP", len(fp))
+                c3.metric("FN", len(fn)); c4.metric("F1", f"{f1:.3f}")
+                if tp: st.success(f"Detected: {', '.join(sorted(tp))}")
+                if fn: st.warning(f"Missed: {', '.join(sorted(fn))}")
+                if fp: st.info(f"Extra flags: {', '.join(sorted(fp))}")
+
+    # ── Tab: Model Diagnostics ───────────────────────────────────────────
+    with tabs[4]:
+        st.subheader("Model Performance Diagnostics")
+
+        if baseline:
+            st.markdown("#### Baseline Model Metrics")
+            models_data = []
+            for mname, mdata in baseline.items():
+                if isinstance(mdata, dict):
+                    models_data.append({'Model': mname, **{k: round(v, 4) if isinstance(v, float) else v
+                                                           for k, v in mdata.items()}})
+            if models_data:
+                st.dataframe(pd.DataFrame(models_data), use_container_width=True)
+
+        # AUPRC degradation
+        st.markdown("#### Performance Degradation Over Time")
+        fig = make_subplots(rows=1, cols=2, subplot_titles=("Est. AUPRC Over Windows", "Risk Score Over Windows"))
+        add_phase_shading(fig, fdf, 1, 1); add_phase_shading(fig, fdf, 1, 2)
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['est_auprc'], mode='lines+markers',
+                                name='Est. AUPRC', line=dict(color='#3498db', width=2),
+                                marker=dict(size=4)), row=1, col=1)
+        if 'baseline_auprc' in fdf.columns:
+            fig.add_hline(y=fdf['baseline_auprc'].iloc[0], line_dash="dash", line_color="#2ecc71",
+                         annotation_text="Baseline", row=1, col=1)
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['risk_score'], mode='lines+markers',
+                                name='Risk Score', line=dict(color='#e74c3c', width=2),
+                                marker=dict(size=4)), row=1, col=2)
+        fig.update_layout(height=380, template="plotly_dark", showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # D_total vs AUPRC scatter
+        fig = px.scatter(fdf, x='D_total', y='est_auprc', color='true_phase',
+                        color_discrete_map={'phase1': '#2ecc71', 'phase2': '#f1c40f', 'phase3': '#e74c3c'},
+                        size='risk_score', size_max=12, hover_data=['window_num', 'intervention_action'],
+                        template='plotly_dark', height=380,
+                        title="D_total vs Estimated AUPRC (size = risk score)")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Tab: Detector Comparison ──────────────────────────────────────────
+    with tabs[5]:
+        st.subheader("Detector Comparison & Ablation")
+
+        if t1 is not None:
+            fig = go.Figure()
+            for m, c in [('Precision', '#3498db'), ('Recall', '#2ecc71'), ('F1', '#e74c3c')]:
+                if m in t1.columns:
+                    fig.add_trace(go.Bar(name=m, x=t1['Detector'], y=t1[m], marker_color=c,
+                                       text=t1[m].round(3), textposition='outside',
+                                       textfont=dict(size=13, color='white')))
+            fig.update_layout(barmode='group', height=420, template="plotly_dark",
+                            title="Detection: Precision / Recall / F1", yaxis=dict(range=[0, 1.15]),
+                            legend=dict(orientation="h", y=1.02, x=0.5, xanchor="center"))
+            st.plotly_chart(fig, use_container_width=True)
+
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### Detection Metrics")
+                st.dataframe(t1, use_container_width=True)
+            with c2:
+                if t2 is not None:
+                    st.markdown("#### Attribution Accuracy")
+                    st.dataframe(t2, use_container_width=True)
+
+        if t3 is not None:
+            st.markdown("---")
+            st.markdown("#### 🔬 SADI Ablation Study")
+            cfg_col = next((c for c in t3.columns if c.lower().startswith('config')), t3.columns[0])
+            f1_col = 'F1' if 'F1' in t3.columns else t3.columns[-1]
+            n = len(t3)
+            colors = ['#95a5a6'] * (n - 1) + ['#3498db']
+            fig = go.Figure(go.Bar(x=t3[cfg_col], y=t3[f1_col], marker=dict(color=colors),
+                                  text=t3[f1_col].round(3), textposition='outside'))
+            fig.update_layout(yaxis=dict(range=[0, 1.1], title="F1"), height=380,
+                            template="plotly_dark", title="Ablation: F1 by SADI Config")
+            st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(t3, use_container_width=True)
+
+        if stat_sig:
+            st.markdown("---")
+            st.markdown("#### 📈 Statistical Significance (Bootstrap)")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("SADI F1", f"{stat_sig.get('sadi_f1_mean', 0):.3f} ± {stat_sig.get('sadi_f1_std', 0):.3f}")
+            c2.metric("KS F1", f"{stat_sig.get('ks_f1_mean', 0):.3f} ± {stat_sig.get('ks_f1_std', 0):.3f}")
+            p = stat_sig.get('wilcoxon_p_value', 1)
+            c3.metric("Wilcoxon p", f"{p:.6f}",
+                     delta="✓ Significant" if stat_sig.get('significant') else "Not significant")
+
+    # ── Tab: Fairness Audit ───────────────────────────────────────────────
+    with tabs[6]:
+        st.subheader("Fairness Audit")
+
+        fig = make_subplots(rows=1, cols=2, subplot_titles=("Demographic Parity Diff", "Equalized Odds Diff"))
+        add_phase_shading(fig, fdf, 1, 1); add_phase_shading(fig, fdf, 1, 2)
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['dpd'], mode='lines+markers',
+                                name='DPD', line=dict(color='#e74c3c', width=2), marker=dict(size=5)), row=1, col=1)
+        fig.add_hline(y=0.10, line_dash="dash", line_color="#f39c12",
+                      annotation_text="Threshold 0.10", row=1, col=1)
+        fig.add_trace(go.Scatter(x=fdf['window_num'], y=fdf['eod'], mode='lines+markers',
+                                name='EOD', line=dict(color='#3498db', width=2), marker=dict(size=5)), row=1, col=2)
+        fig.add_hline(y=0.10, line_dash="dash", line_color="#f39c12",
+                      annotation_text="Threshold 0.10", row=1, col=2)
+        fig.update_layout(height=400, template="plotly_dark", showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Mean DPD", f"{fdf['dpd'].mean():.4f}")
+        c2.metric("Max DPD", f"{fdf['dpd'].max():.4f}")
+        c3.metric("Mean EOD", f"{fdf['eod'].mean():.4f}")
+        c4.metric("Max EOD", f"{fdf['eod'].max():.4f}")
+
+        if t4 is not None:
+            st.markdown("#### Phase-Level Fairness")
+            st.dataframe(t4, use_container_width=True)
+
+        # Fairness vs drift correlation
+        st.markdown("#### Fairness-Drift Correlation")
+        fig = px.scatter(fdf, x='D_total', y='dpd', color='true_phase',
+                        color_discrete_map={'phase1': '#2ecc71', 'phase2': '#f1c40f', 'phase3': '#e74c3c'},
+                        template='plotly_dark', height=300,
+                        title="Does drift cause fairness degradation?")
+        fig.add_hline(y=0.10, line_dash="dash", line_color="#f39c12")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Tab: Alert Timeline ──────────────────────────────────────────────
+    with tabs[7]:
+        st.subheader("Alert Timeline")
+
+        if alerts:
+            st.markdown(f"**{len(alerts)} total alerts**")
+
+            # Alert level distribution
+            alert_levels = [a.get('level', 0) for a in alerts]
+            al_df = pd.Series(alert_levels).value_counts().sort_index()
+            level_map = {1: 'L1 Alert', 2: 'L2 Recalibrate', 3: 'L3 Partial Retrain', 4: 'L4 Full Retrain'}
+            fig = go.Figure(go.Bar(
+                x=[level_map.get(int(i), f'L{i}') for i in al_df.index],
+                y=al_df.values,
+                marker_color=[lc.get(int(i), '#888') for i in al_df.index]))
+            fig.update_layout(height=250, template="plotly_dark", title="Alert Distribution",
+                            margin=dict(t=50, b=30))
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Individual alerts
+            sev_filter = st.selectbox("Min severity", [1, 2, 3, 4],
+                                     format_func=lambda x: f"L{x} — {level_map.get(x, '?')}", key='p_sev')
+            fa = [a for a in alerts if a.get('level', 0) >= sev_filter]
+            st.markdown(f"Showing **{len(fa)}** of {len(alerts)}")
+
+            for a in fa[-20:]:
+                lv_a = a.get('level', 0)
+                ic = {1: '🔵', 2: '🟡', 3: '🟠', 4: '🔴'}.get(lv_a, '⚪')
+                label = f"{ic} W{a.get('window_idx', '?')} — {a.get('action', 'N/A')} ({a.get('phase', '?')})"
+                with st.expander(label):
+                    if 'alert_text' in a:
+                        st.markdown(f'<div class="alert-box">{a["alert_text"]}</div>', unsafe_allow_html=True)
+                    else:
+                        st.json(a)
+        else:
+            st.markdown('<div style="text-align:center;padding:3rem;color:#888">'
+                       '<div style="font-size:3rem">✅</div>'
+                       '<div style="font-size:1.2rem;font-weight:600">No alerts in this pipeline run</div></div>',
+                       unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -1143,13 +1706,16 @@ with st.sidebar:
     st.markdown("### 🏥 Drift2Act")
     mode = st.radio(
         "Dashboard Mode",
-        ["📤 Upload & Analyze", "📊 Review Pipeline Results"],
-        help="Upload mode: test new data against baseline. Review mode: explore full pipeline results."
+        ["📤 Upload & Analyze", "🔧 Pipeline Analysis", "📊 Review Pipeline Results"],
+        help="Upload: test new patient data. Pipeline: upload full pipeline results. Review: browse local results.",
+        captions=["For clinical data teams", "For MLOps engineers", "For local pipeline runs"]
     )
     st.markdown("---")
 
 if mode == "📤 Upload & Analyze":
     render_upload_mode()
+elif mode == "🔧 Pipeline Analysis":
+    render_pipeline_upload_mode()
 else:
     render_review_mode()
 

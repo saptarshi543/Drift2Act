@@ -2,9 +2,6 @@
 
 ## Explainable, Proactive Concept Drift Detection for Clinical Sepsis Prediction Models
 
-**Institution:** IEM-UEM Kolkata, Department of CSE (Artificial Intelligence)  
-**Project Code:** 4A-FINAL | **Version:** 1.0
-
 ---
 
 ## Overview
@@ -150,17 +147,4 @@ After running the pipeline, check:
 | Dashboard | Streamlit, Plotly |
 | Tracking | MLflow |
 
-## Citation
 
-```
-@misc{drift2act2024,
-  title={Drift2Act: Explainable, Proactive Concept Drift Detection for Clinical
-         Sepsis Prediction using SHAP Attribution Drift Indexing},
-  institution={IEM-UEM Kolkata, Department of CSE (AI)},
-  year={2024}
-}
-```
-
-## License
-
-Academic use only. See institution guidelines.
